@@ -1,8 +1,8 @@
 resource "aws_instance" "NewStarbucks" {
-  ami                    = "ami-04f167a56786e4b09"      #change ami id for different region
+  ami                    = "ami-0f5ee92e2d63afc18"      # Ubuntu 20.04 in ap-south-1
   instance_type          = "t2.large"
   key_name               = "Tapestrykey"              #change key name as per your setup
-  #vpc_security_group_ids = [aws_security_group.Jenkins-VM-SG.id]
+  vpc_security_group_ids = [aws_security_group.Jenkins-VM-SG.id]
   #user_data              = templatefile("./install.sh", {})
 
   tags = {
@@ -15,7 +15,7 @@ resource "aws_instance" "NewStarbucks" {
 }
 
 resource "aws_security_group" "Jenkins-VM-SG" {
-  name        = "Jenkins-VM-SG"
+  name        = "Jenkins-VM-SG-New"
   description = "Allow TLS inbound traffic"
 
   ingress = [
