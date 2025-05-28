@@ -1,73 +1,40 @@
-# Terraform state and backup files
-*.tfstate
-*.tfstate.*
-*.backup
-.terraform/
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Terraform plan output
-*.tfplan
-
-# Local overrides
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# Crash logs
-crash.log
-*.crash
-
-# Terragrunt
-.terragrunt-cache/
-
-# Provider binaries (sometimes downloaded manually)
-terraform-provider-*
-
-# IDE/editor specific
-.vscode/
-.idea/
-*.swp
-*.swo
+# Logs
+logs/
 *.log
-*.bak
+*.tlog
+*.out
+*.pid
+*.gz
 
-# OS metadata files
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Python (if used in automation)
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.egg
-*.egg-info/
+# Environment variables
 .env
-.venv/
+.env.local
+.env.*.local
 
-# Zip or archive artifacts
-*.zip
-*.tar
-*.tar.gz
-*.tgz
-*.7z
+# Build output
+dist/
+build/
+out/
 
-# Common large binary types (protect against accidental commits)
-*.exe
-*.dll
-*.so
-*.bin
-*.o
-*.a
-*.dylib
-*.class
-*.jar
-*.iso
-*.img
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
 
-# Trivy SBOMs and scan outputs (optional)
-sboms/
-sbom_zips/
-*.cyclonedx.json
-*.spdx.json
-*.sbom.json
+# Git specific files
+.git/
+.gitignore
