@@ -33,4 +33,6 @@ for remote in $(git branch -r | grep -v '\->'); do
     fi
 done
 
-echo "All remote branches are now tracked locally!"
+echo "All remote branches are now tracked locally!" 
+
+# Xaviuer use 
