@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Universal Setup Script for Ansible EC2 Deployment
+# Universal Setup Script for Ansible EC2 Deployment ...
 # This script works on Windows, Mac, and Linux to help users deploy to EC2
 
 set -e
