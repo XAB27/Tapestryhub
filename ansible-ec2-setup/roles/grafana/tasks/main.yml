@@ -7,6 +7,7 @@
           - apt-transport-https
           - software-properties-common
           - wget
+          - gnupg
         state: present
         update_cache: true
 
@@ -17,22 +18,10 @@
         mode: '0755'
 
     - name: Add Grafana GPG key
-      get_url:
-        url: https://apt.grafana.com/gpg.key
-        dest: /tmp/grafana.gpg
-        mode: '0644'
-
-    - name: Import Grafana GPG key
-      shell: gpg --dearmor < /tmp/grafana.gpg
+      shell: |
+        curl -fsSL https://packages.grafana.com/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
       args:
         creates: /etc/apt/keyrings/grafana.gpg
-
-    - name: Move Grafana GPG key to keyrings
-      copy:
-        src: /tmp/grafana.gpg
-        dest: /etc/apt/keyrings/grafana.gpg
-        mode: '0644'
-        remote_src: true
 
     - name: Add Grafana repository
       apt_repository:
@@ -92,9 +81,3 @@
 - name: Display Grafana status
   debug:
     msg: "Grafana is running on port {{ grafana_port }}"
-
-- name: Clean up temporary files
-  file:
-    path: /tmp/grafana.gpg
-    state: absent
-  when: ansible_os_family == "Debian"

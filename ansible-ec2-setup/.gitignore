@@ -1,0 +1,36 @@
+# Ansible temporary playbooks
+playbooks/check_volume.yml
+
+# Ansible cache and temporary files
+*.retry
+*.pyc
+__pycache__/
+.ansible/
+
+# SSH keys and sensitive files
+*.pem
+*.key
+*.pem.bak
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup

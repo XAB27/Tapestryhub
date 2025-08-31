@@ -51,3 +51,58 @@
           4. Start using eksctl to create/manage EKS clusters
           
           ========================================
+
+# ========================================
+# KUBERNETES TOOLS INSTALLATION PLAYBOOK
+# ========================================
+#
+# This playbook installs essential Kubernetes and AWS tools for container
+# orchestration and cloud management.
+#
+# USAGE:
+#   ansible-playbook playbooks/kubernetes_tools.yml
+#
+# WHAT GETS INSTALLED:
+#   1. AWS CLI v2 (latest version)
+#   2. kubectl (Kubernetes command-line tool)
+#   3. eksctl (Amazon EKS CLI tool)
+#   4. Helm (Kubernetes package manager)
+#   5. Bash completion for all tools
+#
+# TOOLS OVERVIEW:
+#   - AWS CLI: Command-line interface for AWS services
+#   - kubectl: Manage Kubernetes clusters and resources
+#   - eksctl: Create and manage Amazon EKS clusters
+#   - Helm: Install and manage Kubernetes applications
+#
+# FEATURES:
+#   - Latest versions of all tools
+#   - Bash completion and aliases
+#   - Multi-distribution support
+#   - Proper GPG key verification
+#   - System integration
+#
+# ALIASES CONFIGURED:
+#   - k = kubectl
+#   - e = eksctl
+#   - h = helm
+#
+# VERIFICATION:
+#   - aws --version
+#   - kubectl version --client
+#   - eksctl version
+#   - helm version
+#
+# CONFIGURATION:
+#   - AWS: aws configure
+#   - kubectl: kubectl config set-cluster
+#   - eksctl: eksctl create cluster
+#   - Helm: helm repo add
+#
+# TROUBLESHOOTING:
+#   - If AWS CLI fails: Check internet connectivity
+#   - If kubectl fails: Verify Kubernetes cluster access
+#   - If eksctl fails: Check AWS credentials
+#   - If Helm fails: Verify repository configuration
+#
+# ========================================

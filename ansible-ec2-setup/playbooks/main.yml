@@ -5,6 +5,55 @@
   gather_facts: true
   
   pre_tasks:
+    - name: Clean up disk space before installation
+      block:
+        - name: Clean package cache
+          apt:
+            autoclean: true
+            autoremove: true
+          when: ansible_os_family == "Debian"
+          
+        - name: Clean package cache
+          yum:
+            autoremove: true
+          when: ansible_os_family == "RedHat"
+          
+        - name: Remove temporary files
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /tmp
+            - /var/tmp
+          
+        - name: Remove large log files
+          find:
+            paths: /var/log
+            patterns: "*.log"
+            size: 10M
+            recurse: true
+          register: large_logs
+          
+        - name: Delete large log files
+          file:
+            path: "{{ item.path }}"
+            state: absent
+          loop: "{{ large_logs.files }}"
+          when: large_logs.files | length > 0
+          
+        - name: Clean system logs
+          shell: journalctl --vacuum-time=7d
+          changed_when: false
+          
+        - name: Display disk space after cleanup
+          shell: df -h
+          register: disk_space_after
+          changed_when: false
+          
+        - name: Show disk space
+          debug:
+            msg: "{{ disk_space_after.stdout_lines }}"
+    
     - name: Update package cache (Ubuntu/Debian)
       apt:
         update_cache: true
@@ -46,10 +95,10 @@
           - AWS CLI v2, kubectl, eksctl, Helm
           
           Access URLs:
-          - Jenkins: http://{{ ansible_default_ipv4.address }}:{{ jenkins_port }}
-          - SonarQube: http://{{ ansible_default_ipv4.address }}:{{ sonarqube_port }}
-          - Prometheus: http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}
-          - Grafana: http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}
+          - Jenkins: http://{{ ansible_host }}:{{ jenkins_port }}
+          - SonarQube: http://{{ ansible_host }}:{{ sonarqube_port }}
+          - Prometheus: http://{{ ansible_host }}:{{ prometheus_port }}
+          - Grafana: http://{{ ansible_host }}:{{ grafana_port }}
           
           Default credentials:
           - Jenkins: admin/{{ jenkins_admin_password }}
@@ -82,3 +131,62 @@
       debug:
         msg: "Jenkins initial admin password: {{ jenkins_initial_password.stdout }}"
       when: jenkins_initial_password.stdout != ""
+
+# ========================================
+# COMPLETE EC2 DEVOPS INFRASTRUCTURE SETUP
+# ========================================
+#
+# This is the main playbook that orchestrates the complete DevOps environment setup.
+# It installs and configures all essential DevOps tools on your EC2 instance.
+#
+# USAGE:
+#   ansible-playbook playbooks/main.yml
+#
+# WHAT GETS INSTALLED:
+#   1. Common system packages and configurations
+#   2. Docker CE with Docker Compose
+#   3. Jenkins LTS with initial setup
+#   4. SonarQube with PostgreSQL database
+#   5. Trivy vulnerability scanner
+#   6. Prometheus monitoring system
+#   7. Node Exporter for system metrics
+#   8. Grafana for data visualization
+#   9. Kubernetes tools (AWS CLI, kubectl, eksctl, Helm)
+#
+# PREREQUISITES:
+#   - EC2 instance running Ubuntu/Debian or RHEL/CentOS
+#   - SSH access configured with private key
+#   - Sufficient disk space (recommended: 12GB+)
+#   - Security groups configured for required ports
+#
+# PORTS USED:
+#   - Jenkins: 8080
+#   - SonarQube: 9000
+#   - Prometheus: 9090
+#   - Node Exporter: 9100
+#   - Grafana: 3000
+#
+# DEFAULT CREDENTIALS:
+#   - Jenkins: admin / (password shown in output)
+#   - SonarQube: admin / admin
+#   - Grafana: admin / admin
+#
+# ACCESS URLs:
+#   - Jenkins: http://YOUR_EC2_IP:8080
+#   - SonarQube: http://YOUR_EC2_IP:9000
+#   - Prometheus: http://YOUR_EC2_IP:9090
+#   - Grafana: http://YOUR_EC2_IP:3000
+#
+# FEATURES:
+#   - Automatic disk cleanup before installation
+#   - Public IP URLs in output
+#   - Service status verification
+#   - Comprehensive installation summary
+#
+# TROUBLESHOOTING:
+#   - If disk space error: Run check_volume.yml first
+#   - If service fails: Check logs with journalctl -u service-name
+#   - If port issues: Verify security group rules
+#   - If connection fails: Check SSH key and instance state
+#
+# ========================================

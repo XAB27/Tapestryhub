@@ -11,14 +11,21 @@
         state: present
         update_cache: true
 
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
     - name: Add Trivy GPG key
-      apt_key:
-        url: https://aquasecurity.github.io/trivy-repo/deb/public.key
-        state: present
+      shell: |
+        curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor -o /etc/apt/keyrings/trivy.gpg
+      args:
+        creates: /etc/apt/keyrings/trivy.gpg
 
     - name: Add Trivy repository
       apt_repository:
-        repo: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
+        repo: "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
         state: present
         filename: trivy
         update_cache: true

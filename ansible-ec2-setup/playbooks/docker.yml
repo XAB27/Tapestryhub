@@ -38,3 +38,45 @@
           - Run: docker run hello-world
           
           ========================================
+
+# ========================================
+# DOCKER CE INSTALLATION PLAYBOOK
+# ========================================
+#
+# This playbook installs Docker CE (Community Edition) and Docker Compose.
+# It handles different Linux distributions and includes fallback methods.
+#
+# USAGE:
+#   ansible-playbook playbooks/docker.yml
+#
+# WHAT GETS INSTALLED:
+#   1. Docker CE (Community Edition)
+#   2. Docker CLI and daemon
+#   3. Docker Compose plugin
+#   4. Containerd runtime
+#   5. Docker buildx plugin
+#
+# DISTRIBUTION SUPPORT:
+#   - Ubuntu/Debian: Uses apt repositories
+#   - Ubuntu 24.04 (Noble): Falls back to snap installation
+#   - RHEL/CentOS/Amazon Linux: Uses yum repositories
+#
+# FEATURES:
+#   - Automatic distribution detection
+#   - Fallback to snap for Ubuntu 24.04
+#   - User group configuration
+#   - Service auto-start
+#   - Jenkins user added to docker group
+#
+# VERIFICATION:
+#   - docker --version
+#   - docker-compose --version
+#   - sudo systemctl status docker
+#
+# TROUBLESHOOTING:
+#   - If apt fails on Ubuntu 24.04: Snap fallback is automatic
+#   - If service fails: Check with systemctl status docker
+#   - If user can't run docker: Add user to docker group
+#   - If permission denied: Restart user session
+#
+# ========================================

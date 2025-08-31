@@ -50,3 +50,49 @@
       debug:
         msg: "Jenkins initial admin password: {{ jenkins_initial_password.stdout }}"
       when: jenkins_initial_password.stdout != ""
+
+# ========================================
+# JENKINS LTS INSTALLATION PLAYBOOK
+# ========================================
+#
+# This playbook installs Jenkins LTS (Long Term Support) with complete configuration.
+# Jenkins is a popular CI/CD automation server for building, testing, and deploying.
+#
+# USAGE:
+#   ansible-playbook playbooks/jenkins.yml
+#
+# WHAT GETS INSTALLED:
+#   1. Jenkins LTS from official repository
+#   2. Java 17 (required for Jenkins)
+#   3. Jenkins configuration files
+#   4. Systemd service configuration
+#   5. Initial admin password retrieval
+#
+# FEATURES:
+#   - LTS version for stability
+#   - Custom port configuration (default: 8080)
+#   - Java options optimization
+#   - Log rotation configuration
+#   - Service auto-start and enable
+#   - Jenkins user added to docker group
+#
+# ACCESS:
+#   - URL: http://YOUR_EC2_IP:8080
+#   - Username: admin
+#   - Password: (shown in playbook output)
+#
+# PORTS:
+#   - Jenkins: 8080 (configurable)
+#
+# VERIFICATION:
+#   - sudo systemctl status jenkins
+#   - curl http://localhost:8080
+#   - sudo journalctl -u jenkins
+#
+# TROUBLESHOOTING:
+#   - If service fails: Check Java installation
+#   - If port issues: Verify port 8080 is open
+#   - If password not shown: Check /var/lib/jenkins/secrets/
+#   - If startup slow: Check system resources
+#
+# ========================================

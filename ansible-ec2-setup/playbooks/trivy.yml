@@ -42,3 +42,53 @@
           - Update database: trivy image --download-db-only
           
           ========================================
+
+# ========================================
+# TRIVY VULNERABILITY SCANNER PLAYBOOK
+# ========================================
+#
+# This playbook installs Trivy, a comprehensive vulnerability scanner for containers,
+# infrastructure as code, and software dependencies.
+#
+# USAGE:
+#   ansible-playbook playbooks/trivy.yml
+#
+# WHAT GETS INSTALLED:
+#   1. Trivy vulnerability scanner
+#   2. GPG key and repository setup
+#   3. Vulnerability database
+#   4. System integration
+#
+# SCANNING CAPABILITIES:
+#   - Container images (Docker, OCI)
+#   - Infrastructure as Code (Terraform, CloudFormation)
+#   - Git repositories
+#   - Software dependencies
+#   - Operating system packages
+#   - Kubernetes manifests
+#
+# FEATURES:
+#   - Comprehensive vulnerability database
+#   - Multiple scanning modes
+#   - CI/CD integration
+#   - Detailed reporting
+#   - Regular database updates
+#
+# USAGE EXAMPLES:
+#   - trivy image nginx:latest
+#   - trivy fs /path/to/terraform
+#   - trivy repo https://github.com/user/repo
+#   - trivy k8s --report summary cluster
+#
+# VERIFICATION:
+#   - trivy --version
+#   - trivy image --download-db-only
+#   - trivy image hello-world
+#
+# TROUBLESHOOTING:
+#   - If database fails: Run trivy image --download-db-only
+#   - If scan fails: Check internet connectivity
+#   - If permission denied: Run with sudo
+#   - If slow scans: Update vulnerability database
+#
+# ========================================

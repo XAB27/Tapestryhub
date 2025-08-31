@@ -45,3 +45,55 @@
           - Change default password after first login
           
           ========================================
+
+# ========================================
+# SONARQUBE CODE QUALITY ANALYSIS PLAYBOOK
+# ========================================
+#
+# This playbook installs SonarQube for code quality and security analysis.
+# SonarQube provides continuous inspection of code quality and security.
+#
+# USAGE:
+#   ansible-playbook playbooks/sonarqube.yml
+#
+# WHAT GETS INSTALLED:
+#   1. PostgreSQL database server
+#   2. SonarQube Community Edition
+#   3. SonarQube database and user
+#   4. Systemd service configuration
+#   5. Java 17 (required for SonarQube)
+#
+# FEATURES:
+#   - PostgreSQL database backend
+#   - Custom port configuration (default: 9000)
+#   - Optimized Java settings
+#   - Service auto-start and enable
+#   - Database initialization
+#   - Version information display
+#
+# ACCESS:
+#   - URL: http://YOUR_EC2_IP:9000
+#   - Username: admin
+#   - Password: admin
+#
+# PORTS:
+#   - SonarQube: 9000 (configurable)
+#   - PostgreSQL: 5432 (internal)
+#
+# REQUIREMENTS:
+#   - Minimum 2GB RAM
+#   - Java 17
+#   - PostgreSQL database
+#
+# VERIFICATION:
+#   - sudo systemctl status sonarqube
+#   - sudo systemctl status postgresql
+#   - curl http://localhost:9000
+#
+# TROUBLESHOOTING:
+#   - If startup slow: Check system resources
+#   - If database fails: Check PostgreSQL logs
+#   - If port issues: Verify port 9000 is open
+#   - If memory issues: Increase system RAM
+#
+# ========================================

@@ -30,11 +30,17 @@
 
 - name: Install kubectl (Ubuntu/Debian)
   block:
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
     - name: Add Kubernetes GPG key
-      get_url:
-        url: https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key
-        dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-        mode: '0644'
+      shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
     - name: Add Kubernetes repository
       apt_repository:
@@ -101,19 +107,14 @@
 - name: Install Helm (Ubuntu/Debian)
   block:
     - name: Add Helm GPG key
-      get_url:
-        url: https://baltocdn.com/helm/signing.asc
-        dest: /tmp/helm.asc
-        mode: '0644'
-
-    - name: Import Helm GPG key
-      shell: gpg --dearmor < /tmp/helm.asc
+      shell: |
+        curl -fsSL https://baltocdn.com/helm/signing.asc | sudo gpg --dearmor -o /etc/apt/keyrings/helm.gpg
       args:
-        creates: /usr/share/keyrings/helm.gpg
+        creates: /etc/apt/keyrings/helm.gpg
 
     - name: Add Helm repository
       apt_repository:
-        repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
         state: present
         filename: helm-stable-debian
         update_cache: true

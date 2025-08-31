@@ -1,6 +1,6 @@
 ---
 - name: Install Monitoring Stack on EC2
-  hosts: ec2_servers
+  hosts: ec2_instances
   become: true
   gather_facts: true
   
@@ -49,3 +49,64 @@
           3. Configure alerts and notifications
           
           ========================================
+
+# ========================================
+# MONITORING STACK INSTALLATION PLAYBOOK
+# ========================================
+#
+# This playbook installs a complete monitoring stack including Prometheus,
+# Node Exporter, and Grafana for comprehensive system monitoring.
+#
+# USAGE:
+#   ansible-playbook playbooks/monitoring.yml
+#
+# WHAT GETS INSTALLED:
+#   1. Prometheus (metrics collection and storage)
+#   2. Node Exporter (system metrics exporter)
+#   3. Grafana (data visualization and dashboards)
+#   4. Service configurations and auto-start
+#
+# MONITORING COMPONENTS:
+#   - Prometheus: Time-series database for metrics
+#   - Node Exporter: Exports system and hardware metrics
+#   - Grafana: Web-based analytics and visualization platform
+#
+# FEATURES:
+#   - Pre-configured Prometheus targets
+#   - Node Exporter system metrics
+#   - Grafana with optimized settings
+#   - Service auto-start and enable
+#   - Custom port configurations
+#   - Security configurations
+#
+# ACCESS:
+#   - Prometheus: http://YOUR_EC2_IP:9090
+#   - Grafana: http://YOUR_EC2_IP:3000
+#   - Node Exporter: http://YOUR_EC2_IP:9100/metrics
+#
+# PORTS:
+#   - Prometheus: 9090
+#   - Node Exporter: 9100
+#   - Grafana: 3000
+#
+# DEFAULT CREDENTIALS:
+#   - Grafana: admin / admin
+#
+# DASHBOARDS:
+#   - Node Exporter: ID 1860
+#   - Jenkins: ID 9964
+#
+# VERIFICATION:
+#   - sudo systemctl status prometheus
+#   - sudo systemctl status node_exporter
+#   - sudo systemctl status grafana-server
+#   - curl http://localhost:9090
+#   - curl http://localhost:3000
+#
+# TROUBLESHOOTING:
+#   - If services fail: Check system resources
+#   - If port issues: Verify security group rules
+#   - If Grafana won't start: Check configuration files
+#   - If metrics missing: Verify Node Exporter is running
+#
+# ========================================
