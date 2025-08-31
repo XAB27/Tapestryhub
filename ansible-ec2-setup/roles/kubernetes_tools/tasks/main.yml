@@ -1,0 +1,176 @@
+---
+- name: Install AWS CLI v2
+  block:
+    - name: Download AWS CLI v2
+      get_url:
+        url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+        dest: /tmp/awscliv2.zip
+        mode: '0644'
+        timeout: 300
+
+    - name: Extract AWS CLI v2
+      unarchive:
+        src: /tmp/awscliv2.zip
+        dest: /tmp/
+        remote_src: true
+        creates: /tmp/aws
+
+    - name: Install AWS CLI v2
+      shell: /tmp/aws/install --update
+      args:
+        creates: /usr/local/bin/aws
+
+    - name: Clean up AWS CLI installation files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/awscliv2.zip
+        - /tmp/aws
+
+- name: Install kubectl (Ubuntu/Debian)
+  block:
+    - name: Add Kubernetes GPG key
+      get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key
+        dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        mode: '0644'
+
+    - name: Add Kubernetes repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /"
+        state: present
+        filename: kubernetes
+        update_cache: true
+
+    - name: Install kubectl
+      apt:
+        name: kubectl
+        state: present
+        update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install kubectl (RHEL/CentOS/Amazon Linux)
+  block:
+    - name: Add Kubernetes repository
+      yum_repository:
+        name: kubernetes
+        description: Kubernetes Repository
+        baseurl: https://pkgs.k8s.io/core:/stable:/v1.33/rpm/
+        gpgcheck: true
+        gpgkey: https://pkgs.k8s.io/core:/stable:/v1.33/rpm/repodata/repomd.xml.key
+        enabled: true
+
+    - name: Install kubectl
+      yum:
+        name: kubectl
+        state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Install eksctl
+  block:
+    - name: Download eksctl
+      get_url:
+        url: "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_linux_amd64.tar.gz"
+        dest: /tmp/eksctl.tar.gz
+        mode: '0644'
+        timeout: 300
+
+    - name: Extract eksctl
+      unarchive:
+        src: /tmp/eksctl.tar.gz
+        dest: /tmp/
+        remote_src: true
+        creates: /tmp/eksctl
+
+    - name: Install eksctl
+      copy:
+        src: /tmp/eksctl
+        dest: /usr/local/bin/eksctl
+        mode: '0755'
+        remote_src: true
+
+    - name: Clean up eksctl installation files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/eksctl.tar.gz
+        - /tmp/eksctl
+
+- name: Install Helm (Ubuntu/Debian)
+  block:
+    - name: Add Helm GPG key
+      get_url:
+        url: https://baltocdn.com/helm/signing.asc
+        dest: /tmp/helm.asc
+        mode: '0644'
+
+    - name: Import Helm GPG key
+      shell: gpg --dearmor < /tmp/helm.asc
+      args:
+        creates: /usr/share/keyrings/helm.gpg
+
+    - name: Add Helm repository
+      apt_repository:
+        repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+        state: present
+        filename: helm-stable-debian
+        update_cache: true
+
+    - name: Install Helm
+      apt:
+        name: helm
+        state: present
+        update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install Helm (RHEL/CentOS/Amazon Linux)
+  block:
+    - name: Add Helm repository
+      yum_repository:
+        name: helm
+        description: Helm Repository
+        baseurl: https://baltocdn.com/helm/stable/rpm/
+        gpgcheck: true
+        gpgkey: https://baltocdn.com/helm/stable/rpm/gpg
+        enabled: true
+
+    - name: Install Helm
+      yum:
+        name: helm
+        state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Configure bash completion for Kubernetes tools
+  lineinfile:
+    path: /home/{{ ansible_user }}/.bashrc
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "source <(kubectl completion bash)"
+    - "alias k=kubectl"
+    - "complete -F __start_kubectl k"
+    - "source <(eksctl completion bash)"
+    - "alias e=eksctl"
+    - "complete -F __start_eksctl e"
+    - "source <(helm completion bash)"
+    - "alias h=helm"
+    - "complete -F __start_helm h"
+  become: true
+  become_user: "{{ ansible_user }}"
+
+- name: Test tool installations
+  command: "{{ item }}"
+  register: tool_test
+  changed_when: false
+  loop:
+    - "aws --version"
+    - "kubectl version --client"
+    - "eksctl version"
+    - "helm version"
+
+- name: Display tool versions
+  debug:
+    msg: "{{ item.stdout }}"
+  loop: "{{ tool_test.results }}"

@@ -1,0 +1,113 @@
+---
+- name: Create Prometheus user
+  user:
+    name: prometheus
+    system: true
+    shell: /usr/sbin/nologin
+    createhome: false
+
+- name: Create Prometheus directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - /data
+    - /etc/prometheus
+    - /var/log/prometheus
+
+- name: Download Prometheus
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+    mode: '0644'
+    timeout: 300
+
+- name: Extract Prometheus
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /tmp/
+    remote_src: true
+    creates: /tmp/prometheus-{{ prometheus_version }}.linux-amd64
+
+- name: Install Prometheus binaries
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    mode: '0755'
+    owner: root
+    group: root
+    remote_src: true
+  loop:
+    - prometheus
+    - promtool
+
+- name: Check if Prometheus console directories exist
+  stat:
+    path: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+  loop:
+    - consoles
+    - console_libraries
+  register: prometheus_console_dirs
+
+- name: Copy Prometheus console directories (if they exist)
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item.item }}"
+    dest: "/etc/prometheus/{{ item.item }}"
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+    remote_src: true
+  loop: "{{ prometheus_console_dirs.results }}"
+  when: item.stat.exists
+
+- name: Configure Prometheus
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify: restart prometheus
+
+- name: Create Prometheus systemd service
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart prometheus
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+
+- name: Start and enable Prometheus service
+  systemd:
+    name: prometheus
+    state: started
+    enabled: true
+
+- name: Wait for Prometheus to start
+  uri:
+    url: "http://localhost:{{ prometheus_port }}"
+    status_code: [200, 302]
+  register: prometheus_status
+  until: prometheus_status.status == 200 or prometheus_status.status == 302
+  retries: 30
+  delay: 10
+
+- name: Display Prometheus status
+  debug:
+    msg: "Prometheus is running on port {{ prometheus_port }}"
+
+- name: Clean up downloaded files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/prometheus.tar.gz
+    - /tmp/prometheus-{{ prometheus_version }}.linux-amd64

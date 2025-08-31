@@ -1,0 +1,51 @@
+---
+- name: Install Monitoring Stack on EC2
+  hosts: ec2_servers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      
+    - name: Update package cache (RHEL/CentOS/Amazon Linux)
+      yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - prometheus
+    - node_exporter
+    - grafana
+
+  post_tasks:
+    - name: Display monitoring stack installation summary
+      debug:
+        msg: |
+          ========================================
+          MONITORING STACK INSTALLATION COMPLETE!
+          ========================================
+          
+          Monitoring services installed:
+          - Prometheus: {{ prometheus_version }} (Port: {{ prometheus_port }})
+          - Node Exporter: {{ node_exporter_version }} (Port: {{ node_exporter_port }})
+          - Grafana: (Port: {{ grafana_port }})
+          
+          Access URLs:
+          - Prometheus: http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}
+          - Grafana: http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}
+          
+          Default credentials:
+          - Grafana: {{ grafana_admin_user }}/{{ grafana_admin_password }}
+          
+          Next steps:
+          1. Access Grafana and configure Prometheus as data source
+          2. Import dashboards:
+             - Node Exporter: Dashboard ID 1860
+             - Jenkins: Dashboard ID 9964
+          3. Configure alerts and notifications
+          
+          ========================================

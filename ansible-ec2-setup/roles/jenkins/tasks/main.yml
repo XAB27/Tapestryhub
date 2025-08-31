@@ -1,0 +1,106 @@
+---
+- name: Install Jenkins (Ubuntu/Debian)
+  block:
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Jenkins GPG key
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        dest: /etc/apt/keyrings/jenkins-keyring.asc
+        mode: '0644'
+
+    - name: Add Jenkins repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+        filename: jenkins
+        update_cache: true
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install Jenkins (RHEL/CentOS/Amazon Linux)
+  block:
+    - name: Add Jenkins repository
+      yum_repository:
+        name: jenkins
+        description: Jenkins Repository
+        baseurl: https://pkg.jenkins.io/redhat-stable/
+        gpgcheck: true
+        gpgkey: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+        enabled: true
+
+    - name: Install Jenkins
+      yum:
+        name: jenkins
+        state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Configure Jenkins (Ubuntu/Debian)
+  template:
+    src: jenkins.conf.j2
+    dest: /etc/default/jenkins
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+    backup: true
+  when: ansible_os_family == "Debian"
+  notify: restart jenkins
+
+- name: Configure Jenkins (RHEL/CentOS/Amazon Linux)
+  template:
+    src: jenkins.conf.j2
+    dest: /etc/sysconfig/jenkins
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+    backup: true
+  when: ansible_os_family == "RedHat"
+  notify: restart jenkins
+
+- name: Start and enable Jenkins service
+  systemd:
+    name: jenkins
+    state: started
+    enabled: true
+
+- name: Wait for Jenkins to start
+  uri:
+    url: "http://localhost:{{ jenkins_port }}"
+    status_code: [200, 403]
+  register: jenkins_status
+  until: jenkins_status.status == 200 or jenkins_status.status == 403
+  retries: 30
+  delay: 10
+
+- name: Display Jenkins status
+  debug:
+    msg: "Jenkins is running on port {{ jenkins_port }}"
+
+- name: Get Jenkins initial admin password
+  shell: sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_initial_password
+  changed_when: false
+  failed_when: false
+
+- name: Display Jenkins initial admin password
+  debug:
+    msg: "Jenkins initial admin password: {{ jenkins_initial_password.stdout }}"
+  when: jenkins_initial_password.stdout != ""
+
+- name: Verify Jenkins service status
+  systemd:
+    name: jenkins
+  register: jenkins_service_status
+
+- name: Display Jenkins service status
+  debug:
+    msg: "Jenkins service status: {{ jenkins_service_status.status.ActiveState }}"

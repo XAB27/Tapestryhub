@@ -1,0 +1,40 @@
+---
+- name: Install Docker on EC2
+  hosts: ec2_servers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      
+    - name: Update package cache (RHEL/CentOS/Amazon Linux)
+      yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - docker
+
+  post_tasks:
+    - name: Display Docker installation summary
+      debug:
+        msg: |
+          ========================================
+          DOCKER INSTALLATION COMPLETE!
+          ========================================
+          
+          Docker version: {{ docker_version }}
+          Docker Compose version: {{ docker_compose_version }}
+          
+          Docker service is running and enabled.
+          Current user has been added to docker group.
+          
+          To test Docker installation:
+          - Run: docker --version
+          - Run: docker run hello-world
+          
+          ========================================

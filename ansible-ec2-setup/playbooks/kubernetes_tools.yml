@@ -1,0 +1,53 @@
+---
+- name: Install Kubernetes Tools on EC2
+  hosts: ec2_servers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      
+    - name: Update package cache (RHEL/CentOS/Amazon Linux)
+      yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - kubernetes_tools
+
+  post_tasks:
+    - name: Display Kubernetes tools installation summary
+      debug:
+        msg: |
+          ========================================
+          KUBERNETES TOOLS INSTALLATION COMPLETE!
+          ========================================
+          
+          Tools installed:
+          - AWS CLI v2
+          - kubectl
+          - eksctl
+          - Helm
+          
+          Bash completion configured for:
+          - kubectl (alias: k)
+          - eksctl (alias: e)
+          - helm (alias: h)
+          
+          Test commands:
+          - aws --version
+          - kubectl version --client
+          - eksctl version
+          - helm version
+          
+          Next steps:
+          1. Configure AWS credentials: aws configure
+          2. Set up kubectl context for your cluster
+          3. Configure Helm repositories
+          4. Start using eksctl to create/manage EKS clusters
+          
+          ========================================

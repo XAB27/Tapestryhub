@@ -1,0 +1,100 @@
+---
+- name: Install Grafana (Ubuntu/Debian)
+  block:
+    - name: Install Grafana prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - software-properties-common
+          - wget
+        state: present
+        update_cache: true
+
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Grafana GPG key
+      get_url:
+        url: https://apt.grafana.com/gpg.key
+        dest: /tmp/grafana.gpg
+        mode: '0644'
+
+    - name: Import Grafana GPG key
+      shell: gpg --dearmor < /tmp/grafana.gpg
+      args:
+        creates: /etc/apt/keyrings/grafana.gpg
+
+    - name: Move Grafana GPG key to keyrings
+      copy:
+        src: /tmp/grafana.gpg
+        dest: /etc/apt/keyrings/grafana.gpg
+        mode: '0644'
+        remote_src: true
+
+    - name: Add Grafana repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+        state: present
+        filename: grafana
+        update_cache: true
+
+    - name: Install Grafana
+      apt:
+        name: grafana
+        state: present
+        update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install Grafana (RHEL/CentOS/Amazon Linux)
+  block:
+    - name: Add Grafana repository
+      yum_repository:
+        name: grafana
+        description: Grafana Repository
+        baseurl: https://packages.grafana.com/oss/rpm
+        gpgcheck: true
+        gpgkey: https://packages.grafana.com/gpg.key
+        enabled: true
+
+    - name: Install Grafana
+      yum:
+        name: grafana
+        state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Configure Grafana
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  notify: restart grafana
+
+- name: Start and enable Grafana service
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: true
+
+- name: Wait for Grafana to start
+  uri:
+    url: "http://localhost:{{ grafana_port }}"
+    status_code: [200, 302]
+  register: grafana_status
+  until: grafana_status.status == 200 or grafana_status.status == 302
+  retries: 30
+  delay: 10
+
+- name: Display Grafana status
+  debug:
+    msg: "Grafana is running on port {{ grafana_port }}"
+
+- name: Clean up temporary files
+  file:
+    path: /tmp/grafana.gpg
+    state: absent
+  when: ansible_os_family == "Debian"

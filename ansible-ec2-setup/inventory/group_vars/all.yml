@@ -1,0 +1,52 @@
+# Global variables for all hosts
+---
+# System configuration
+system_timezone: "America/New_York"
+system_hostname: "ansible-managed-server"
+
+# Docker configuration
+docker_version: "latest"
+docker_compose_version: "v2.20.0"
+
+# Jenkins configuration
+jenkins_version: "2.414.2"
+jenkins_port: 8080
+jenkins_admin_user: "admin"
+jenkins_admin_password: "admin123"  # Change this in production!
+
+# SonarQube configuration
+sonarqube_version: "9.9.0.65466"
+sonarqube_port: 9000
+sonarqube_admin_user: "admin"
+sonarqube_admin_password: "admin"  # Change this in production!
+sonarqube_database_password: "sonarqube123"  # Change this in production!
+
+# Prometheus configuration
+prometheus_version: "3.5.0"
+prometheus_port: 9090
+
+# Node Exporter configuration
+node_exporter_version: "1.9.1"
+node_exporter_port: 9100
+
+# Grafana configuration
+grafana_port: 3000
+grafana_admin_user: "admin"
+grafana_admin_password: "admin"  # Change this in production!
+
+# Java configuration
+java_version: "17"
+
+# Package manager configuration
+package_manager_update_cache: true
+package_manager_upgrade: true
+
+# Security settings
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
+ssh_key_authentication: "yes"
+
+# Firewall settings (if using UFW)
+ufw_enabled: false
+ufw_default_incoming: "deny"
+ufw_default_outgoing: "allow"

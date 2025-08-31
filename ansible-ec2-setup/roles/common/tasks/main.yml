@@ -1,0 +1,170 @@
+---
+- name: Set timezone
+  timezone:
+    name: "{{ system_timezone }}"
+
+- name: Set hostname
+  hostname:
+    name: "{{ system_hostname }}"
+
+- name: Update package cache and upgrade system (Ubuntu/Debian)
+  apt:
+    update_cache: true
+    upgrade: yes
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Update package cache and upgrade system (RHEL/CentOS/Amazon Linux)
+  yum:
+    update_cache: true
+    upgrade: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Install essential packages (Ubuntu/Debian)
+  apt:
+    name:
+      - bash-completion
+      - wget
+      - git
+      - zip
+      - unzip
+      - curl
+      - jq
+      - net-tools
+      - build-essential
+      - ca-certificates
+      - apt-transport-https
+      - gnupg
+      - fontconfig
+      - software-properties-common
+      - lsb-release
+      - python3-pip
+      - python3-psycopg2
+      - libpq-dev
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install essential packages (RHEL/CentOS/Amazon Linux)
+  yum:
+    name:
+      - bash-completion
+      - wget
+      - git
+      - zip
+      - unzip
+      - curl
+      - jq
+      - net-tools
+      - gcc
+      - ca-certificates
+      - gnupg2
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+      - python3-pip
+      - python3-psycopg2
+      - postgresql-devel
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Add Git PPA repository (Ubuntu/Debian)
+  apt_repository:
+    repo: ppa:git-core/ppa
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Update package cache after adding Git PPA
+  apt:
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install latest Git (Ubuntu/Debian)
+  apt:
+    name: git
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Java 17 (Ubuntu/Debian)
+  apt:
+    name: "openjdk-{{ java_version }}-jdk"
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Java 17 (RHEL/CentOS/Amazon Linux)
+  yum:
+    name: "java-{{ java_version }}-openjdk"
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Set JAVA_HOME environment variable (Ubuntu/Debian)
+  lineinfile:
+    path: /etc/environment
+    line: "JAVA_HOME=/usr/lib/jvm/java-{{ java_version }}-openjdk-amd64"
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Set JAVA_HOME environment variable (RHEL)
+  lineinfile:
+    path: /etc/environment
+    line: "JAVA_HOME=/usr/lib/jvm/java-{{ java_version }}-openjdk"
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Configure firewall (UFW) for Ubuntu/Debian
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "22"    # SSH
+    - "80"    # HTTP
+    - "443"   # HTTPS
+    - "8080"  # Jenkins
+    - "9000"  # SonarQube
+    - "9090"  # Prometheus
+    - "9100"  # Node Exporter
+    - "3000"  # Grafana
+  when: ansible_os_family == "Debian" and ufw_enabled
+
+- name: Configure firewall (firewalld) for RHEL/CentOS
+  firewalld:
+    port: "{{ item }}/tcp"
+    permanent: true
+    state: enabled
+  loop:
+    - "22"    # SSH
+    - "80"    # HTTP
+    - "443"   # HTTPS
+    - "8080"  # Jenkins
+    - "9000"  # SonarQube
+    - "9090"  # Prometheus
+    - "9100"  # Node Exporter
+    - "3000"  # Grafana
+  when: ansible_os_family == "RedHat"
+
+- name: Create application directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  loop:
+    - /opt/jenkins
+    - /opt/sonarqube
+    - /opt/docker
+    - /opt/prometheus
+    - /opt/grafana
+    - /var/log/jenkins
+    - /var/log/sonarqube
+    - /var/log/prometheus
+    - /var/log/grafana
+    - /data
+    - /etc/prometheus
+
+- name: Reload bash completion
+  shell: source /etc/bash_completion
+  args:
+    executable: /bin/bash
+  changed_when: false

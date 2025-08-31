@@ -1,0 +1,84 @@
+---
+- name: Complete EC2 DevOps Infrastructure Setup
+  hosts: ec2_instances
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache (Ubuntu/Debian)
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      
+    - name: Update package cache (RHEL/CentOS/Amazon Linux)
+      yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - common
+    - docker
+    - jenkins
+    - sonarqube
+    - trivy
+    - prometheus
+    - node_exporter
+    - grafana
+    - kubernetes_tools
+
+  post_tasks:
+    - name: Display installation summary
+      debug:
+        msg: |
+          ========================================
+          COMPLETE EC2 INFRASTRUCTURE SETUP COMPLETE!
+          ========================================
+          
+          Services installed and configured:
+          - Docker CE: {{ docker_version }}
+          - Jenkins: {{ jenkins_version }} (Port: {{ jenkins_port }})
+          - SonarQube: {{ sonarqube_version }} (Port: {{ sonarqube_port }})
+          - Trivy: Vulnerability Scanner
+          - Prometheus: {{ prometheus_version }} (Port: {{ prometheus_port }})
+          - Node Exporter: {{ node_exporter_version }} (Port: {{ node_exporter_port }})
+          - Grafana: (Port: {{ grafana_port }})
+          - AWS CLI v2, kubectl, eksctl, Helm
+          
+          Access URLs:
+          - Jenkins: http://{{ ansible_default_ipv4.address }}:{{ jenkins_port }}
+          - SonarQube: http://{{ ansible_default_ipv4.address }}:{{ sonarqube_port }}
+          - Prometheus: http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}
+          - Grafana: http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}
+          
+          Default credentials:
+          - Jenkins: admin/{{ jenkins_admin_password }}
+          - SonarQube: {{ sonarqube_admin_user }}/{{ sonarqube_admin_password }}
+          - Grafana: {{ grafana_admin_user }}/{{ grafana_admin_password }}
+          
+          Kubernetes Tools:
+          - AWS CLI: aws --version
+          - kubectl: kubectl version --client
+          - eksctl: eksctl version
+          - Helm: helm version
+          
+          Next steps:
+          1. Access Jenkins and complete initial setup
+          2. Access SonarQube and change default password
+          3. Access Grafana and configure Prometheus as data source
+          4. Configure security groups to allow access to all ports
+          5. Set up your CI/CD pipeline
+          6. Import Grafana dashboards (Node Exporter: 1860, Jenkins: 9964)
+          
+          ========================================
+
+    - name: Show Jenkins initial admin password
+      shell: sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_initial_password
+      changed_when: false
+      failed_when: false
+
+    - name: Display Jenkins initial admin password
+      debug:
+        msg: "Jenkins initial admin password: {{ jenkins_initial_password.stdout }}"
+      when: jenkins_initial_password.stdout != ""

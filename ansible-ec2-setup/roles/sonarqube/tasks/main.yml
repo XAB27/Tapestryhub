@@ -1,0 +1,157 @@
+---
+- name: Install PostgreSQL (Ubuntu/Debian)
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - postgresql-client
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install PostgreSQL (RHEL/CentOS/Amazon Linux)
+  yum:
+    name:
+      - postgresql-server
+      - postgresql-contrib
+      - postgresql
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Initialize PostgreSQL database (RHEL/CentOS/Amazon Linux)
+  command: postgresql-setup initdb
+  when: ansible_os_family == "RedHat"
+
+- name: Start and enable PostgreSQL service
+  systemd:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Download SonarQube
+  get_url:
+    url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
+    dest: /tmp/sonarqube-{{ sonarqube_version }}.zip
+    mode: '0644'
+    timeout: 300
+
+- name: Install unzip if not present
+  package:
+    name: unzip
+    state: present
+
+- name: Extract SonarQube
+  unarchive:
+    src: /tmp/sonarqube-{{ sonarqube_version }}.zip
+    dest: /opt/
+    remote_src: true
+    creates: /opt/sonarqube-{{ sonarqube_version }}
+
+- name: Remove existing SonarQube directory if it exists
+  file:
+    path: /opt/sonarqube
+    state: absent
+
+- name: Create SonarQube symlink
+  file:
+    src: /opt/sonarqube-{{ sonarqube_version }}
+    dest: /opt/sonarqube
+    state: link
+
+- name: Create SonarQube user
+  user:
+    name: sonarqube
+    system: true
+    shell: /bin/bash
+    home: /opt/sonarqube
+    createhome: false
+
+- name: Set SonarQube directory permissions
+  file:
+    path: /opt/sonarqube-{{ sonarqube_version }}
+    owner: sonarqube
+    group: sonarqube
+    recurse: true
+
+- name: Configure SonarQube
+  template:
+    src: sonar.properties.j2
+    dest: /opt/sonarqube/conf/sonar.properties
+    owner: sonarqube
+    group: sonarqube
+    mode: '0644'
+  notify: restart sonarqube
+
+- name: Create SonarQube systemd service
+  template:
+    src: sonarqube.service.j2
+    dest: /etc/systemd/system/sonarqube.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart sonarqube
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+
+- name: Start and enable SonarQube service
+  systemd:
+    name: sonarqube
+    state: started
+    enabled: true
+
+- name: Display SonarQube version
+  debug:
+    msg: |
+      ========================================
+      SONARQUBE VERSION INFORMATION
+      ========================================
+      Installed Version: {{ sonarqube_version }}
+      Installation Path: /opt/sonarqube
+      Service Status: Running
+      Access URL: http://{{ ansible_default_ipv4.address }}:{{ sonarqube_port }}
+      Default Credentials: admin/admin
+      ========================================
+
+- name: Check SonarQube installation directory
+  shell: ls -la /opt/sonarqube*
+  register: sonarqube_install_check
+  changed_when: false
+
+- name: Display SonarQube installation details
+  debug:
+    msg: "{{ sonarqube_install_check.stdout_lines }}"
+
+- name: Check if SonarQube is already running
+  uri:
+    url: "http://localhost:{{ sonarqube_port }}"
+    status_code: [200, 302]
+  register: sonarqube_already_running
+  failed_when: false
+  changed_when: false
+
+- name: Display SonarQube status if already running
+  debug:
+    msg: "✅ SonarQube is already running on port {{ sonarqube_port }} - skipping wait"
+  when: sonarqube_already_running.status == 200 or sonarqube_already_running.status == 302
+
+- name: Wait for SonarQube to start (only if not already running)
+  uri:
+    url: "http://localhost:{{ sonarqube_port }}"
+    status_code: [200, 302]
+  register: sonarqube_status
+  until: sonarqube_status.status == 200 or sonarqube_status.status == 302
+  retries: 60
+  delay: 10
+  when: sonarqube_already_running.status != 200 and sonarqube_already_running.status != 302
+
+- name: Display SonarQube started status
+  debug:
+    msg: "✅ SonarQube is now running on port {{ sonarqube_port }}"
+  when: (sonarqube_already_running.status != 200 and sonarqube_already_running.status != 302) and (sonarqube_status.status == 200 or sonarqube_status.status == 302)
+
+- name: Clean up downloaded file
+  file:
+    path: /tmp/sonarqube-{{ sonarqube_version }}.zip
+    state: absent

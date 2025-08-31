@@ -1,0 +1,44 @@
+---
+- name: Install Trivy on EC2
+  hosts: ec2_servers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      
+    - name: Update package cache (RHEL/CentOS/Amazon Linux)
+      yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - trivy
+
+  post_tasks:
+    - name: Display Trivy installation summary
+      debug:
+        msg: |
+          ========================================
+          TRIVY INSTALLATION COMPLETE!
+          ========================================
+          
+          Trivy vulnerability scanner installed successfully!
+          
+          Features:
+          - Container image scanning
+          - Infrastructure as Code scanning
+          - Git repository scanning
+          - Software dependency scanning
+          
+          Usage examples:
+          - Scan Docker image: trivy image <image-name>
+          - Scan directory: trivy fs <directory>
+          - Scan repository: trivy repo <repository-url>
+          - Update database: trivy image --download-db-only
+          
+          ========================================

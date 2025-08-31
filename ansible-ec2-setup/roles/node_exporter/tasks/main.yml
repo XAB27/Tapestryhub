@@ -1,0 +1,70 @@
+---
+- name: Create Node Exporter user
+  user:
+    name: node_exporter
+    system: true
+    shell: /usr/sbin/nologin
+    createhome: false
+
+- name: Download Node Exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: /tmp/node_exporter.tar.gz
+    mode: '0644'
+    timeout: 300
+
+- name: Extract Node Exporter
+  unarchive:
+    src: /tmp/node_exporter.tar.gz
+    dest: /tmp/
+    remote_src: true
+    creates: /tmp/node_exporter-{{ node_exporter_version }}.linux-amd64
+
+- name: Install Node Exporter binary
+  copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    mode: '0755'
+    owner: root
+    group: root
+    remote_src: true
+
+- name: Create Node Exporter systemd service
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart node_exporter
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+
+- name: Start and enable Node Exporter service
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: true
+
+- name: Wait for Node Exporter to start
+  uri:
+    url: "http://localhost:{{ node_exporter_port }}"
+    status_code: [200, 302]
+  register: node_exporter_status
+  until: node_exporter_status.status == 200 or node_exporter_status.status == 302
+  retries: 30
+  delay: 10
+
+- name: Display Node Exporter status
+  debug:
+    msg: "Node Exporter is running on port {{ node_exporter_port }}"
+
+- name: Clean up downloaded files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/node_exporter.tar.gz
+    - /tmp/node_exporter-{{ node_exporter_version }}.linux-amd64

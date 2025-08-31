@@ -1,0 +1,47 @@
+---
+- name: Install SonarQube on EC2
+  hosts: ec2_servers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      
+    - name: Update package cache (RHEL/CentOS/Amazon Linux)
+      yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - sonarqube
+
+  post_tasks:
+    - name: Display SonarQube installation summary
+      debug:
+        msg: |
+          ========================================
+          SONARQUBE INSTALLATION COMPLETE!
+          ========================================
+          
+          SonarQube version: {{ sonarqube_version }}
+          SonarQube port: {{ sonarqube_port }}
+          
+          Access URL: http://{{ ansible_default_ipv4.address }}:{{ sonarqube_port }}
+          
+          Default credentials:
+          - Username: {{ sonarqube_admin_user }}
+          - Password: {{ sonarqube_admin_password }}
+          
+          SonarQube service is running and enabled.
+          PostgreSQL database is configured and running.
+          
+          Important notes:
+          - SonarQube requires at least 2GB RAM
+          - Initial startup may take 2-5 minutes
+          - Change default password after first login
+          
+          ========================================

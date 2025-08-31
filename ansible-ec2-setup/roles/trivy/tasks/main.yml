@@ -1,0 +1,68 @@
+---
+- name: Install Trivy (Ubuntu/Debian)
+  block:
+    - name: Install Trivy prerequisites
+      apt:
+        name:
+          - wget
+          - apt-transport-https
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: true
+
+    - name: Add Trivy GPG key
+      apt_key:
+        url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+        state: present
+
+    - name: Add Trivy repository
+      apt_repository:
+        repo: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
+        state: present
+        filename: trivy
+        update_cache: true
+
+    - name: Install Trivy
+      apt:
+        name: trivy
+        state: present
+        update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install Trivy (RHEL/CentOS/Amazon Linux)
+  block:
+    - name: Add Trivy repository
+      yum_repository:
+        name: trivy
+        description: Trivy Repository
+        baseurl: https://aquasecurity.github.io/trivy-repo/rpm/releases/$releasever/$basearch/
+        gpgcheck: true
+        gpgkey: https://aquasecurity.github.io/trivy-repo/rpm/public.key
+        enabled: true
+
+    - name: Install Trivy
+      yum:
+        name: trivy
+        state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Test Trivy installation
+  command: trivy --version
+  register: trivy_version_output
+  changed_when: false
+
+- name: Display Trivy version
+  debug:
+    msg: "{{ trivy_version_output.stdout }}"
+
+- name: Update Trivy database
+  command: trivy image --download-db-only
+  register: trivy_db_update
+  changed_when: false
+  failed_when: false
+
+- name: Display Trivy database update status
+  debug:
+    msg: "Trivy database updated successfully"
+  when: trivy_db_update.rc == 0

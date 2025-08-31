@@ -1,0 +1,52 @@
+---
+- name: Install Jenkins on EC2
+  hosts: ec2_servers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      
+    - name: Update package cache (RHEL/CentOS/Amazon Linux)
+      yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - jenkins
+
+  post_tasks:
+    - name: Display Jenkins installation summary
+      debug:
+        msg: |
+          ========================================
+          JENKINS INSTALLATION COMPLETE!
+          ========================================
+          
+          Jenkins version: {{ jenkins_version }}
+          Jenkins port: {{ jenkins_port }}
+          
+          Access URL: http://{{ ansible_default_ipv4.address }}:{{ jenkins_port }}
+          
+          Default credentials:
+          - Username: {{ jenkins_admin_user }}
+          - Password: {{ jenkins_admin_password }}
+          
+          Jenkins service is running and enabled.
+          
+          ========================================
+
+    - name: Show Jenkins initial admin password
+      shell: sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_initial_password
+      changed_when: false
+      failed_when: false
+
+    - name: Display Jenkins initial admin password
+      debug:
+        msg: "Jenkins initial admin password: {{ jenkins_initial_password.stdout }}"
+      when: jenkins_initial_password.stdout != ""
