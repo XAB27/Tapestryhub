@@ -36,15 +36,15 @@
         state: directory
         mode: '0755'
 
-    - name: Add Kubernetes GPG key
+    - name: Add Kubernetes GPG key using apt-key (fallback method)
       shell: |
-        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo apt-key add -
       args:
-        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        creates: /etc/apt/trusted.gpg.d/kubernetes.gpg
 
     - name: Add Kubernetes repository
       apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /"
+        repo: "deb https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /"
         state: present
         filename: kubernetes
         update_cache: true

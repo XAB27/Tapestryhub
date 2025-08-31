@@ -17,15 +17,15 @@
         state: directory
         mode: '0755'
 
-    - name: Add Grafana GPG key
+    - name: Add Grafana GPG key using apt-key (fallback method)
       shell: |
-        curl -fsSL https://packages.grafana.com/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+        wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
       args:
-        creates: /etc/apt/keyrings/grafana.gpg
+        creates: /etc/apt/trusted.gpg.d/grafana.gpg
 
     - name: Add Grafana repository
       apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+        repo: "deb https://apt.grafana.com stable main"
         state: present
         filename: grafana
         update_cache: true
