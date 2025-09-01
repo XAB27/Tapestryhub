@@ -1,5 +1,8 @@
 # Ansible temporary playbooks
 playbooks/check_volume.yml
+playbooks/fix_sonarqube.yml
+playbooks/fix_sonarqube_restart_loop.yml
+playbooks/restart_sonarqube.yml
 
 # Ansible cache and temporary files
 *.retry

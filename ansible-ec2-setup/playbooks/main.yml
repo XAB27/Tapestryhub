@@ -5,8 +5,38 @@
   gather_facts: true
   
   pre_tasks:
-    - name: Clean up disk space before installation
+    - name: Fix system directories and permissions
       block:
+        - name: Ensure /tmp and /var/tmp directories exist with correct permissions
+          file:
+            path: "{{ item }}"
+            state: directory
+            mode: '1777'
+            owner: root
+            group: root
+          loop:
+            - /tmp
+            - /var/tmp
+
+        - name: Fix apt sources.list.d permissions
+          file:
+            path: /etc/apt/sources.list.d
+            state: directory
+            mode: '0755'
+            owner: root
+            group: root
+
+        - name: Clean up problematic repository files
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /etc/apt/sources.list.d/kubernetes.list
+            - /etc/apt/sources.list.d/grafana.list
+            - /etc/apt/sources.list.d/trivy.list
+            - /etc/apt/sources.list.d/docker.list
+            - /etc/apt/sources.list.d/helm-stable-debian.list
+
         - name: Clean package cache
           apt:
             autoclean: true
@@ -18,15 +48,7 @@
             autoremove: true
           when: ansible_os_family == "RedHat"
           
-        - name: Remove temporary files
-          file:
-            path: "{{ item }}"
-            state: absent
-          loop:
-            - /tmp
-            - /var/tmp
-          
-        - name: Remove large log files
+        - name: Remove large log files (but keep directories)
           find:
             paths: /var/log
             patterns: "*.log"

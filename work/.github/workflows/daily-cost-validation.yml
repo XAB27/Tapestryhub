@@ -1,0 +1,82 @@
+name: Daily Cost Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.tf'
+      - '**/*.tfvars'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.tf'
+      - '**/*.tfvars'
+
+jobs:
+  validate-daily-cost:
+    name: Validate Daily Cost in Coder Metadata
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        
+    - name: Run daily cost validation
+      run: |
+        python3 validate_daily_cost.py .
+        
+    - name: Upload validation report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: daily-cost-validation-report
+        path: |
+          validation_report.json
+          
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read the validation script output
+          const output = '${{ steps.validate-daily-cost.outputs.stdout }}';
+          
+          let comment = '## 🔍 Daily Cost Validation Results\n\n';
+          
+          if (output.includes('Status: PASS')) {
+            comment += '✅ **Validation PASSED** - All coder_metadata resources are compliant!\n\n';
+          } else {
+            comment += '❌ **Validation FAILED** - Issues found with daily_cost properties.\n\n';
+            
+            // Extract issues from output
+            const issuesMatch = output.match(/ISSUES FOUND:(.*?)(?=\n\n|$)/s);
+            if (issuesMatch) {
+              comment += '### Issues Found:\n';
+              comment += '```\n' + issuesMatch[1].trim() + '\n```\n\n';
+            }
+          }
+          
+          comment += '**Next Steps:**\n';
+          comment += '- Review any validation errors above\n';
+          comment += '- Ensure all coder_metadata resources have valid daily_cost properties\n';
+          comment += '- Re-run validation after fixes\n\n';
+          comment += '---\n';
+          comment += '*This check ensures proper cost tracking and quota management.*';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
