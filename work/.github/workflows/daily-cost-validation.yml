@@ -12,6 +12,7 @@ on:
       - '**/*.tf'
       - '**/*.tfvars'
 
+workflow_dispatch:  # Manual trigger from GitHub UI
 jobs:
   validate-daily-cost:
     name: Validate Daily Cost in Coder Metadata
