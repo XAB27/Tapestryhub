@@ -4,6 +4,8 @@ Daily Cost Validation Script for Coder Metadata Resources
 
 This script scans Terraform files to ensure all coder_metadata resources
 have the required daily_cost property with valid values.
+
+(Added) Always writes a JSON artifact: validation_report.json
 """
 
 import os
@@ -125,9 +127,20 @@ class DailyCostValidator:
             'status': 'PASS' if self.resources_with_issues == 0 else 'FAIL'
         }
         return report
-    
+
+    def write_report_json(self, report: Dict[str, Any], out_path: Path) -> None:
+        """Always write the JSON report (best-effort; never crash the job log printing)."""
+        try:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=2)
+            print(f"[info] JSON report written to: {out_path}")
+        except Exception as e:
+            # Do not fail the validator because of an artifact write issue
+            print(f"[warn] Failed to write JSON report to {out_path}: {e}")
+
     def print_report(self, report: Dict[str, Any]) -> None:
-        """Print a formatted validation report."""
+        """Print a formatted validation report (keeps your existing job-log look)."""
         print("=" * 80)
         print("DAILY COST VALIDATION REPORT")
         print("=" * 80)
@@ -179,6 +192,10 @@ class DailyCostValidator:
         # Generate and print report
         report = self.generate_report()
         self.print_report(report)
+
+        # (NEW) Always write JSON artifact alongside the printed report
+        # Uses fixed name expected by your CI artifacts config.
+        self.write_report_json(report, Path("validation_report.json"))
         
         # Return exit code (0 for success, 1 for failure)
         return 0 if report['status'] == 'PASS' else 1
